@@ -1,0 +1,41 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@font-face {
+    font-family: "Golos Sans";
+    font-weight: 400;
+    src: url("/assets/fonts/Golos-Text_Regular.woff2");
+}
+
+@font-face {
+    font-family: "Golos Sans";
+    font-weight: 500;
+    src: url("/assets/fonts/Golos-Text_Medium.woff2");
+}
+
+@font-face {
+    font-family: "Golos Sans";
+    font-weight: 600;
+    src: url("/assets/fonts/Golos-Text_DemiBold.woff2");
+}
+
+@font-face {
+    font-family: "Golos Sans";
+    font-weight: 700;
+    src: url("/assets/fonts/Golos-Text_Bold.woff2");
+}
+
+@font-face {
+    font-family: "Golos Sans";
+    font-weight: 800;
+    src: url("../fonts/Golos-Text_Black.woff2");
+}
+
+@theme {
+    --font-sans: 'Golos Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
+}
