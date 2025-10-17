@@ -1,19 +1,27 @@
 <script setup>
-import {computed} from "vue"
+import {computed, onMounted} from "vue"
 import DocumentWarning from "./DocumentWarning.vue"
 import DocumentHtml from "./DocumentHtml.vue"
 import DocumentHeading from "./DocumentHeading.vue"
+import DocumentParagraph from "./DocumentParagraph.vue";
+import DocumentTextRun from "./DocumentTextRun.vue";
+import DocumentLineBreak from "./DocumentLineBreak.vue";
+import DocumentTable from "./DocumentTable.vue";
 
 const props = defineProps({
     element: Object
 })
 
-const emit = defineEmits(['variable-click'])
+const emit = defineEmits(['variable-click', 'is-mounted'])
 
 const componentMap = {
     'heading': DocumentHeading,
     'html': DocumentHtml,
-    'warning': DocumentWarning
+    // 'warning': DocumentWarning,
+    'paragraph': DocumentParagraph,
+    'text_run': DocumentTextRun,
+    'line_break': DocumentLineBreak,
+    'table': DocumentTable
 }
 
 const componentType = computed(() => {
@@ -31,6 +39,10 @@ const compiledContent = computed(() => {
 const handleVariableClick = (variableName) => {
     emit('variable-click', variableName)
 }
+
+onMounted(() => {
+    emit('is-mounted', true)
+})
 </script>
 
 <template>

@@ -3,146 +3,88 @@
 namespace App\Http\Controllers;
 
 use App\Models\DocumentTemplate;
+use App\Services\DocxParser;
+use App\Services\PageBreaker;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\File;
 use Inertia\Inertia;
+use PhpOffice\PhpWord\IOFactory;
 
 class DocumentController extends Controller
 {
-    public function show($id)
+    public function show($id, Request $request)
     {
-        $template = DocumentTemplate::findOrFail($id);
+        $template = DocumentTemplate::find($id);
 
         return Inertia::render('ContractGenerator', [
-            'template' => $template,
-            'initialFormData' => $this->extractVariables($template->content)
+            'template' => $template
         ]);
     }
 
-    public function updatePreview(Request $request)
+    /**
+     * Предпросмотр документа с подставленными значениями
+     */
+    public function preview(Request $request, $id)
     {
-        $template = DocumentTemplate::findOrFail($request->template_id);
-        $formData = $request->form_data;
-
-        // Обновляем структуру документа с учетом выбранных значений
-        $updatedStructure = $this->applyFormData(
-            $template->content['structure'],
-            $formData
-        );
-
-        return response()->json([
-            'success' => true,
-            'updatedStructure' => $updatedStructure,
-            'compiledText' => $this->generatePlainText($updatedStructure)
+        $request->validate([
+            'variables' => 'nullable|array'
         ]);
-    }
 
-    private function formatLabel($key)
-    {
-        return ucfirst(str_replace('_', ' ', $key));
-    }
+        try {
+            $template = DocumentTemplate::findOrFail($id);
 
-    private function extractVariables($content)
-    {
-        $variables = [];
+            // Генерируем DOCX с подставленными значениями
+            $docxPath = $template->generateDocument($request->variables);
 
-        foreach ($content['structure'] as $section) {
-            foreach ($section['elements'] as $element) {
-                if (!empty($element['variables'])) {
-                    foreach ($element['variables'] as $variable) {
-                        if (is_array($variable)) {
-                            // Переменная с опциями выбора
-                            $variables[$variable['name']] = [
-                                'type' => $variable['type'] ?? 'text',
-                                'value' => $variable['default'] ?? '',
-                                'options' => $variable['options'] ?? [],
-                                'label' => $variable['label'] ?? $this->formatLabel($variable['name'])
-                            ];
-                        } else {
-                            // Простая текстовая переменная
-                            $variables[$variable] = [
-                                'type' => 'text',
-                                'value' => '',
-                                'label' => $this->formatLabel($variable)
-                            ];
-                        }
-                    }
-                }
-            }
+            // Конвертируем в PDF
+            $pdfPath = $template->convertToPdf($docxPath);
+
+            // Регистрируем функцию для удаления после завершения
+            register_shutdown_function(function () use ($docxPath, $pdfPath) {
+                File::delete($docxPath);
+                File::delete($pdfPath);
+            });
+
+            // Отдаем PDF
+            return response()->file($pdfPath, [
+                'Content-Type' => 'application/pdf',
+                'Content-Disposition' => 'inline; filename="preview.pdf"'
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return $variables;
     }
 
-    private function applyFormData($structure, $formData)
+    /**
+     * Скачивание готового документа
+     */
+    public function download(Request $request, $id)
     {
-        foreach ($structure as &$section) {
-            // Проверяем условия для секции
-            if (isset($section['conditions'])) {
-                $section['enabled'] = $this->evaluateConditions($section['conditions'], $formData);
-            }
+        $request->validate([
+            'variables' => 'nullable|array'
+        ]);
 
-            if (!$section['enabled']) continue;
+        try {
+            $template = DocumentTemplate::findOrFail($id);
+            $docxPath = $template->generateDocument($request->variables);
 
-            foreach ($section['elements'] as &$element) {
-                // Проверяем условия для элемента
-                if (isset($element['conditions'])) {
-                    $element['enabled'] = $this->evaluateConditions($element['conditions'], $formData);
-                }
+            return response()->download($docxPath,
+                $template->name . '.docx',
+                [
+                    'Content-Type' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                    'Content-Disposition' => 'attachment; filename="' . $template->name . '.docx"'
+                ]
+            );
 
-//                if (!$element['enabled']) continue;
-
-                if ($element['type'] === 'html' && !empty($element['variables'])) {
-                    $element['compiledContent'] = $this->compileHtml(
-                        $element['content'],
-                        $formData
-                    );
-                }
-            }
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'error' => $e->getMessage()
+            ], 500);
         }
-
-        return $structure;
-    }
-
-    private function evaluateConditions($conditions, $formData)
-    {
-        // Простая реализация проверки условий
-        foreach ($conditions as $field => $expectedValue) {
-            if (($formData[$field] ?? '') !== $expectedValue) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    private function compileHtml($html, $formData)
-    {
-        foreach ($formData as $key => $value) {
-            if (!empty($value) && is_string($value)) {
-                // 1. Заменяем простые плейсхолдеры
-                $html = str_replace("{{{$key}}}", $value, $html);
-
-                // 2. Заменяем span-плейсхолдеры с помощью preg_replace
-                $pattern = '/<span[^>]*data-variable="' . preg_quote($key, '/') . '"[^>]*>.*?<\/span>/';
-                $html = preg_replace($pattern, $value, $html);
-            }
-        }
-
-        return $html;
-    }
-
-    private function generatePlainText($structure)
-    {
-        $text = '';
-
-        foreach ($structure as $section) {
-            foreach ($section['elements'] as $element) {
-                if (in_array($element['type'], ['heading', 'html'])) {
-                    $content = $element['compiledContent'] ?? $element['content'];
-                    $text .= strip_tags($content) . "\n\n";
-                }
-            }
-        }
-
-        return $text;
     }
 }

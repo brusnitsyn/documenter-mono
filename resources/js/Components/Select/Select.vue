@@ -3,10 +3,6 @@ import {computed, onMounted, onUnmounted, ref} from "vue";
 import {normalizeOptions} from "../../Utils/optionsFormatter.js";
 
 const props = defineProps({
-    modelValue: {
-        type: [String, Number, Object],
-        default: null
-    },
     options: {
         type: Array,
         required: true,
@@ -22,6 +18,8 @@ const props = defineProps({
     }
 })
 
+const model = defineModel('value')
+
 const emit = defineEmits(['update:modelValue', 'change'])
 
 const isOpen = ref(false)
@@ -34,14 +32,14 @@ const normalizedOptions = computed(() => {
 
 // Находим выбранную опцию
 const selectedOption = computed(() => {
-    if (!props.modelValue) return null
+    if (!model.value) return null
 
-    return normalizedOptions.value.find(opt => opt.value === props.modelValue) || null
+    return normalizedOptions.value.find(opt => opt.value === model.value) || null
 })
 
 // Проверяем, выбрана ли опция
 const isOptionSelected = (option) => {
-    return props.modelValue === option.value
+    return model.value === option.value
 }
 
 // Переключаем dropdown
@@ -53,7 +51,7 @@ const toggleDropdown = () => {
 
 // Выбираем опцию
 const selectOption = (option) => {
-    emit('update:modelValue', option.value)
+    model.value = option.value
     emit('change', option)
     isOpen.value = false
 }

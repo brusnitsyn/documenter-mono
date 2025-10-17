@@ -10,8 +10,8 @@ export const formatOptions = (optionsArray) => {
         // Если это объект с ключами key и value
         if (item && typeof item === 'object' && item.key !== undefined && item.value !== undefined) {
             return {
-                value: item.key,
-                label: item.value
+                value: item.value,
+                label: item.key
             }
         }
 

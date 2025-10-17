@@ -1,5 +1,6 @@
 import './bootstrap';
 import '../css/app.css'
+import 'vue-pdf-embed/dist/styles/textLayer.css'
 
 import { createApp, h } from 'vue'
 import { createInertiaApp } from '@inertiajs/vue3'

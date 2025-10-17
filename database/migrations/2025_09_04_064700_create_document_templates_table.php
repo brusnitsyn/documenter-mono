@@ -14,7 +14,10 @@ return new class extends Migration
         Schema::create('document_templates', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->json('content');
+            $table->string('description')->nullable();
+            $table->longText('content');
+            $table->json('variables');
+            $table->string('source_path')->nullable();
             $table->timestamps();
         });
     }
