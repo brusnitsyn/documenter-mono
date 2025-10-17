@@ -35,7 +35,7 @@ class DocImportController extends Controller
         $escapedTemplateDir = escapeshellarg($templateDir);
 
         // Команда конвертации
-        $command = "cd $escapedTemplateDir && pandoc -f docx -t html5 $templateFileName -o $previewPath --self-contained --embed-resources";
+        $command = "cd $escapedTemplateDir && pandoc -f docx -t html5 $templateFileName -o $previewPath --self-contained";
 //        $command = "cd {$escapedTemplateDir} && libreoffice --headless --convert-to html {$templateFileName}";
 
         $result = Process::timeout(300)->run($command);
