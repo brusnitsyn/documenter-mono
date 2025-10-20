@@ -48,6 +48,9 @@ class DocumentTemplate extends Model
     {
         $pdfPath = str_replace('.docx', '.pdf', $docxPath);
 
+        // Надо добавить....
+        putenv('HOME=/tmp');
+        putenv('USER=www-data');
         $command = "libreoffice --headless --convert-to pdf --outdir " .
             escapeshellarg(dirname($pdfPath)) . " " .
             escapeshellarg($docxPath);

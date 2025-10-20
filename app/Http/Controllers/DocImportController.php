@@ -302,9 +302,16 @@ class DocImportController extends Controller
 
     public function previewVariables(Request $request, DocxVariableExtractor $extractor)
     {
-        $request->validate([
+        $rules = [
             'doc_file' => 'required|file|mimes:docx,doc|max:10240'
-        ]);
+        ];
+        $messages = [
+            'doc_file.required' => 'Вы не приложили документ'
+        ];
+
+        $validator = \Validator::make($request->all(), $rules, $messages);
+
+        $validator->validate();
 
         try {
             $file = $request->file('doc_file');
