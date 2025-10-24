@@ -16,7 +16,7 @@ class DocxTemplateProcessor
 
             foreach ($data as $value) {
                 if (array_key_exists('value', $value))
-                    $templateProcessor->setValue($value['label'], $value['value']);
+                    $templateProcessor->setValue($value['name'], $value['value']);
             }
 
             $outputPath = storage_path('app/temp/' . uniqid() . '.docx');

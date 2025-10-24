@@ -12,6 +12,8 @@ import {Link, router} from "@inertiajs/vue3";
 import Editor from "../Components/Editor.vue";
 import VuePdfEmbed, { useVuePdfEmbed } from 'vue-pdf-embed'
 import {useFileDownload} from "../Composables/useFileDownload.js";
+import PriceInput from "../Components/Document/InputVariable/PriceInput.vue";
+import TextArea from "../Components/Input/TextArea.vue";
 
 const { downloadFile } = useFileDownload()
 
@@ -29,6 +31,8 @@ const prepareVariables = (variables) => {
         formData.value.push({
             label: variable.label,
             type: variable.type,
+            name: variable.name,
+            options: variable.options
         })
     }
 }
@@ -103,6 +107,119 @@ const onDownloadDocx = async () => {
         console.error('Ошибка при скачивании docx файла: ', e.message)
     }
 }
+
+// function scrollToElementByText(text, options = {}) {
+//     const {
+//         behavior = 'smooth',
+//         block = 'start',
+//         inline = 'nearest',
+//         partialMatch = false,
+//         caseSensitive = false
+//     } = options
+//
+//     // Ищем все элементы, содержащие текст
+//     const elements = Array.from(document.querySelectorAll('*')).filter(element => {
+//         const elementText = caseSensitive
+//             ? element.textContent
+//             : element.textContent.toLowerCase()
+//         const searchText = caseSensitive
+//             ? text
+//             : text.toLowerCase()
+//
+//         return partialMatch
+//             ? elementText.includes(searchText)
+//             : elementText.trim() === searchText
+//     })
+//
+//     if (elements.length > 0) {
+//         elements[0].scrollIntoView({
+//             behavior,
+//             block,
+//             inline
+//         })
+//         return elements[0]
+//     }
+//
+//     return null
+// }
+const searchAndScroll = (targetText) => {
+    if (!targetText.trim()) return
+
+    const result = scrollToElementByText(targetText)
+
+    if (result) {
+        console.log(result)
+        highlightElement(result.element)
+    }
+}
+
+const scrollToElementByText = (targetText) => {
+    const elementContainers = document.querySelectorAll('.textLayer')
+    if (!elementContainers) return null
+
+    const elementsOfContainers = []
+    for (const container of elementContainers) {
+        elementsOfContainers.push(...container.children)
+    }
+
+    const allElements = Array.from(elementsOfContainers)
+        .filter(el => el.textContent && el.textContent.trim())
+        .filter(el => {
+            const style = window.getComputedStyle(el)
+            return style.display !== 'none' && style.visibility !== 'hidden'
+        })
+
+    // Сначала ищем точное совпадение
+    for (const el of allElements) {
+        if (el.textContent.trim() === targetText) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            return { element: el, foundText: targetText, isComposite: false }
+        }
+    }
+
+    // Ищем составной текст в соседних элементах
+    for (let i = 0; i < allElements.length - 1; i++) {
+        const current = allElements[i]
+        const next = allElements[i + 1]
+
+        const combined = current.textContent.trim() + next.textContent.trim()
+
+        if (combined === targetText) {
+            current.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            return {
+                element: [current, next],
+                foundText: targetText,
+                isComposite: true,
+                parts: [current.textContent.trim(), next.textContent.trim()]
+            }
+        }
+    }
+
+    return null
+}
+
+const highlightElement = (element) => {
+    // Убираем предыдущую подсветку
+    document.querySelectorAll('.search-highlight').forEach(el => {
+        el.classList.remove('search-highlight')
+    })
+
+    if (Array.isArray(element)) {
+        for (const el of element) {
+            el.classList.add('search-highlight')
+
+            setTimeout(() => {
+                el.classList.remove('search-highlight')
+            }, 3000)
+        }
+    } else {
+        element.classList.add('search-highlight')
+
+        setTimeout(() => {
+            element.classList.remove('search-highlight')
+        }, 3000)
+    }
+}
 </script>
 
 <template>
@@ -128,13 +245,13 @@ const onDownloadDocx = async () => {
                 </div>
                 <template #footer>
                     <div class="flex flex-col gap-y-1">
-                        <Button block @click="onPrint">
+                        <Button block @click="onPrint" :loading="previewLoading">
                             <template #icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"></path><path d="M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4"></path><rect x="7" y="13" width="10" height="8" rx="2"></rect></g></svg>
                             </template>
                             Печать документа
                         </Button>
-                        <Button block @click="onDownloadDocx">
+                        <Button block @click="onDownloadDocx" :loading="previewLoading">
                             <template #icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3l3-3"></path></g></svg>
                             </template>
@@ -146,23 +263,48 @@ const onDownloadDocx = async () => {
             </Card>
         </template>
 
-        <Card header="Предпросмотр">
-            <div class="flex flex-col items-center justify-center relative">
+        <Card header="Предпросмотр" :content-scroll="!previewLoading" :content-relative>
+            <div class="flex flex-col items-center justify-center">
                 <VuePdfEmbed width="793.701" text-layer ref="viewer" :source="previewUrl" @rendered="previewLoading = false" />
-                <div v-if="previewLoading" class="absolute inset-y-0 backdrop-blur-xs h-[calc(100vh-100px)] w-[793px] rounded-md">
-                    <div  class="relative text-black text-center top-1/2">
-                        Loading...
+                <div  v-if="previewLoading" class="absolute inset-0 backdrop-blur-xs h-full flex items-center justify-center z-10">
+                    <div class="text-center space-y-4">
+                        <div class="flex items-center justify-center">
+                            <div class="relative">
+                                <div class="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                                <div class="absolute inset-0 w-8 h-8 border-3 border-transparent border-r-blue-300 rounded-full animate-spin" style="animation-duration: 1.5s"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </Card>
 
         <template #rightbar>
-            <Card header="Свойства документа">
-                <ListStrate v-for="(variable, key) in formData" :key="key" :header="variable.label">
+            <Card header="Свойства документа" :content-relative>
+                <div v-if="previewLoading" class="absolute inset-0 flex items-center justify-center">
+                    <div class="flex items-center justify-center">
+                        <div class="relative">
+                            <div class="w-8 h-8 border-3 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
+                            <div class="absolute inset-0 w-8 h-8 border-3 border-transparent border-r-blue-300 rounded-full animate-spin" style="animation-duration: 1.5s"></div>
+                        </div>
+                    </div>
+                </div>
+                <ListStrate v-else v-for="(variable, key) in formData" :key="key" :header="variable.label">
                     <Input
                         v-if="variable.type === 'text'"
                         :id="key"
+                        @focus="searchAndScroll(variable.name)"
+                        v-model:value="variable.value"
+                        @update:value="value => onChangeVariableTextValue(key, value)"
+                        :placeholder="`Введите ${formatLabel(variable.label)}`"
+                    />
+
+                    <TextArea
+                        v-if="variable.type === 'textarea'"
+                        :rows="8"
+                        :resize="false"
+                        :id="key"
+                        @focus="searchAndScroll(variable.name)"
                         v-model:value="variable.value"
                         @update:value="value => onChangeVariableTextValue(key, value)"
                         :placeholder="`Введите ${formatLabel(variable.label)}`"
@@ -172,9 +314,10 @@ const onDownloadDocx = async () => {
                     <Select
                         v-else-if="variable.type === 'select'"
                         :id="key"
+                        @focus="searchAndScroll(variable.name)"
                         @change="value => onChangeVariableSelectValue(key, value)"
                         v-model:value="variable.value"
-                        :options="variable.values"
+                        :options="variable.options"
                     />
 
                     <!-- Radio кнопки -->
@@ -195,9 +338,15 @@ const onDownloadDocx = async () => {
                             {{ optionLabel }}
                         </label>
                     </div>
+
+                    <PriceInput v-else-if="variable.type === 'price-input'"
+                                v-model:number="variable.number"
+                                v-model:text="variable.value"
+                                @focus="searchAndScroll(variable.name)"
+                    />
                 </ListStrate>
                 <template #footer>
-                    <Button block @click="updatePreview">
+                    <Button :loading="previewLoading" block @click="updatePreview">
                         Обновить предпросмотр
                     </Button>
                 </template>
@@ -207,6 +356,11 @@ const onDownloadDocx = async () => {
 </template>
 
 <style scoped>
+@reference "tailwindcss";
+
+:deep(.search-highlight) {
+    @apply border border-dashed border-yellow-500 bg-yellow-200 text-black;
+}
 :deep(.vue-pdf-embed) {
     margin: 0 auto;
 }

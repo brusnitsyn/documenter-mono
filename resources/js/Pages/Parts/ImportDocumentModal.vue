@@ -8,13 +8,16 @@ import Select from "../../Components/Select/Select.vue";
 import ListStrate from "../../Components/List/ListStrate.vue";
 import Input from "../../Components/Input/Input.vue";
 import {useApiForm} from "../../Composables/useApiForm.js";
+import Card from "../../Components/Card/Card.vue";
+import FormGroup from "../../Components/Form/FormGroup.vue";
 
 const open = defineModel('open')
 const stage = ref('upload')
 const description = ref('')
 const uploadedFile = ref(null)
+const templateVariables = ref(null)
 
-const { formData: uploadForm, errors, loading, submit, setFile: setFileToForm } = useApiForm({
+const { formData: uploadForm, errors, reset, loading, submit, setFile: setFileToForm } = useApiForm({
     name: '',
     description: '',
     file: null,
@@ -31,8 +34,21 @@ const uploadFile = async () => {
     try {
         setFileToForm('doc_file', uploadedFile.value)
         await submit('/api/import/variables').then(res => {
-            uploadForm.value.variables = res.variables
-            if (uploadForm.value.variables.length > 0) stage.value = 'variables'
+            uploadForm.value.variables = res.variables.map(itm => ({
+                label: itm.label,
+                name: itm.name,
+                type: 'text'
+            }))
+            templateVariables.value = res.variables
+            if (templateVariables.value.length > 0) {
+                stage.value = 'variables'
+                selectedVariable.value = uploadForm.value.variables[0]
+            }
+            else errors.value = {
+                file: [
+                    'В документе отсутствуют переменные'
+                ]
+            }
         })
     } catch (err) {
         console.log(err)
@@ -41,13 +57,21 @@ const uploadFile = async () => {
 
 const variableTypes = [
     {
-        key: 'Текст',
+        key: 'Однострочное поле',
         value: 'text'
     },
     {
-        key: 'Выбор',
+        key: 'Многострочное поле',
+        value: 'textarea'
+    },
+    {
+        key: 'Поле выбора',
         value: 'select'
-    }
+    },
+    {
+        key: 'Поле ввода стоимости',
+        value: 'price-input'
+    },
 ]
 
 const submitForm = () => {
@@ -58,20 +82,82 @@ const submitForm = () => {
         }
     })
 }
+
+const afterCloseModal = () => {
+    stage.value = 'upload'
+    reset()
+}
+
+const widthOfStage = computed(() => {
+    if (stage.value === 'upload')
+        return 0
+    else if (stage.value === 'variables')
+        return 980
+})
+
+const selectedVariable = ref()
+const activeVariable = computed(() => {
+    return uploadForm.value.variables.find(itm => itm.name === selectedVariable.value?.name)
+})
+
+const inputVariableOptions = (value) => {
+    activeVariable.value.options = value.split(',').map(item => item.trim())
+}
+
+const changeTypeValue = (type) => {
+    if (type !== 'select') {
+        delete activeVariable.value.options
+        delete activeVariable.value.textOptions
+    }
+}
+
+const clickToVariable = (variable) => {
+    selectedVariable.value = variable
+}
 </script>
 
 <template>
-    <Modal v-model:open="open" title="Импорт документа" :description="description">
+    <Modal v-model:open="open" title="Импорт документа" :description="description" @after-close="afterCloseModal" :width="widthOfStage">
         <div v-if="stage === 'upload'" class="flex flex-col gap-y-1">
             <Input v-model:value="uploadForm.name" label="Наименование" />
             <Input v-model:value="uploadForm.description" label="Описание" />
             <FileUpload class="mt-2.5" v-model:file="uploadedFile" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
         </div>
-        <ListStrate v-else v-for="variable in uploadForm.variables" :header="variable.label">
-            <Select :options="variableTypes" v-model:value="variable.type" placeholder="Выберите тип" />
-        </ListStrate>
+        <div v-else class="grid grid-cols-[280px_1fr] gap-x-2 ">
+            <Card header="Переменные документа">
+                <div class="flex flex-col gap-y-0.5 max-h-[420px] pr-2 overflow-y-auto">
+                    <Button v-for="variable in templateVariables" block @click="clickToVariable(variable)">
+                        {{ variable.label }}
+                    </Button>
+                </div>
+<!--                <ListStrate v-for="variable in uploadForm.variables" :header="variable.label">-->
+<!--                    <Select :options="variableTypes" v-model:value="variable.type" placeholder="Выберите тип" />-->
+<!--                </ListStrate>-->
+            </Card>
+            <Card :header="selectedVariable.label">
+                <div class="pr-2">
+                    <div class="flex flex-col gap-y-1">
+                        <FormGroup label="Наименование переменной" position="top">
+                            <Input v-model:value="activeVariable.name" disabled />
+                        </FormGroup>
 
-        <div v-if="errors" class="absolute translate-x-full top-2 -right-2">
+                        <FormGroup label="Отображаемое наименование" position="top">
+                            <Input v-model:value="activeVariable.label" />
+                        </FormGroup>
+
+                        <FormGroup label="Тип ввода" position="top">
+                            <Select :options="variableTypes" v-model:value="activeVariable.type" @update:value="changeTypeValue(value)" placeholder="Выберите тип" />
+                        </FormGroup>
+
+                        <FormGroup v-if="activeVariable.type === 'select'" label="Значения для выбора" position="top">
+                            <Input v-model:value="activeVariable.textOptions" @update:value="value => inputVariableOptions(value)" />
+                        </FormGroup>
+                    </div>
+                </div>
+            </Card>
+        </div>
+
+        <div v-if="errors" class="absolute translate-x-full top-2 -right-2 flex flex-col gap-y-1">
             <template v-for="errorContainer in errors">
                 <template v-for="error in errorContainer">
                     <div class="flex flex-row items-center bg-rose-300 rounded-md gap-x-1.5 py-2 px-3">

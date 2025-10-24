@@ -25,7 +25,15 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'default'
-    }
+    },
+    loading: {
+        type: Boolean,
+        default: false
+    },
+    disabled: {
+        type: Boolean,
+        default: false
+    },
 })
 
 const baseClasses = [
@@ -84,16 +92,51 @@ const classes = computed(() => {
 
     return base
 })
+
+const handleClick = (event) => {
+    if (props.loading || props.disabled) {
+        event.preventDefault()
+        return
+    }
+    emits('click', event)
+}
 </script>
 
 <template>
-    <component :is="tag" :href="href" @click="emits('click')"
-               :class="classes" v-bind="$attrs">
-        <div class="flex flex-row gap-x-2 items-center">
-            <div v-if="$slots.icon" class="size-6 stroke-zinc-500 group-disabled:stroke-zinc-600 sm:size-4 dark:stroke-zinc-400">
-                <slot name="icon" />
+    <component :is="tag"
+               :href="href"
+               @click="handleClick"
+               :class="classes"
+               :disabled="loading || disabled"
+               v-bind="$attrs">
+        <div class="flex flex-row gap-x-2 items-center relative">
+            <!-- Спиннер загрузки -->
+            <div
+                v-if="loading"
+                class="absolute inset-0 flex items-center justify-center"
+            >
+                <div class="flex items-center gap-x-2">
+                    <!-- Анимированный спиннер -->
+                    <div class="flex space-x-1">
+                        <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 0s"></div>
+                        <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                        <div class="w-1.5 h-1.5 bg-current rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                    </div>
+                </div>
             </div>
-            <slot />
+
+            <!-- Основной контент кнопки (скрывается при loading) -->
+            <div
+                :class="[
+                    'flex flex-row gap-x-2 items-center transition-opacity duration-200',
+                    loading ? 'opacity-0' : 'opacity-100'
+                ]"
+            >
+                <div v-if="$slots.icon" class="size-6 stroke-zinc-500 group-disabled:stroke-zinc-600 sm:size-4 dark:stroke-zinc-400">
+                    <slot name="icon" />
+                </div>
+                <slot />
+            </div>
         </div>
     </component>
 </template>

@@ -91,7 +91,7 @@ onUnmounted(() => {
             class="group relative block w-full before:absolute before:inset-px before:rounded-[calc(var(--radius-lg)-1px)] before:bg-white before:shadow-sm dark:before:hidden focus:outline-hidden after:pointer-events-none after:absolute after:inset-0 after:rounded-lg after:ring-transparent after:ring-inset data-focus:after:ring-2 data-focus:after:ring-blue-500 data-disabled:opacity-50 data-disabled:before:bg-zinc-950/5 data-disabled:before:shadow-none"
             :class="{
               'opacity-50 cursor-not-allowed': disabled,
-              'ring-2 ring-blue-500 rounded-[calc(var(--radius-lg)-1px)]': isOpen
+              'ring-2 ring-blue-500 rounded-lg': isOpen
             }"
             @click="toggleDropdown"
             :disabled="disabled"

@@ -32,7 +32,9 @@ const labelPositionClass = computed(() => {
         <label v-if="label" class="text-base/6 text-zinc-950 select-none data-disabled:opacity-50 sm:text-sm/6 dark:text-white">
             {{ label }}
         </label>
-        <slot />
+        <div class="grow">
+            <slot />
+        </div>
     </div>
 </template>
 

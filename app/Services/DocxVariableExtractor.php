@@ -107,13 +107,15 @@ class DocxVariableExtractor
 
     private function extractFromText(string $text, array &$variables): void
     {
-        // Ищем переменные в формате {{variable_name}}
+        // Ищем переменные в формате ${variable_name}
         preg_match_all('/\$\{\s*([a-zA-Zа-яА-ЯёЁ0-9_]+)\s*\}/u', $text, $matches);
         if (!empty($matches[1])) {
-            $variables[] = [
-                'name' => $matches[0][0],
-                'label' => $matches[1][0]
-            ];
+            foreach ($matches[0] as $index => $fullMatch) {
+                $variables[] = [
+                    'name' => $fullMatch,        // Полное выражение с ${}
+                    'label' => $matches[1][$index] // Только содержимое внутри {}
+                ];
+            }
         }
     }
 

@@ -303,10 +303,12 @@ class DocImportController extends Controller
     public function previewVariables(Request $request, DocxVariableExtractor $extractor)
     {
         $rules = [
-            'doc_file' => 'required|file|mimes:docx,doc|max:10240'
+            'name' => 'required|string',
+            'doc_file' => 'required|file|mimes:docx,doc|max:10240',
         ];
         $messages = [
-            'doc_file.required' => 'Вы не приложили документ'
+            'name.required' => 'Наименование не может быть пустым',
+            'doc_file.required' => 'Вы не приложили документ',
         ];
 
         $validator = \Validator::make($request->all(), $rules, $messages);

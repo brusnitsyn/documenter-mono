@@ -1,5 +1,5 @@
 <script setup>
-import {computed, watch} from 'vue'
+import {computed, ref, watch} from 'vue'
 
 const props = defineProps({
     open: {
@@ -25,10 +25,18 @@ const props = defineProps({
     panelId: {
         type: String,
         default: () => `modal-panel-${Math.random().toString(36).substr(2, 9)}`
+    },
+    closeButton: {
+        type: Boolean,
+        default: true
+    },
+    width: {
+        type: Number,
+        default: 512
     }
 })
 
-const emit = defineEmits(['close'])
+const emit = defineEmits(['close', 'beforeClose', 'afterClose'])
 
 // Блокировка скролла при открытии модального окна
 watch(() => props.open, (isOpen) => {
@@ -39,11 +47,31 @@ watch(() => props.open, (isOpen) => {
     }
 })
 
+// Ширина модального окна
+const modalWidth = computed(() => {
+    if (props.width === 0 || props.width === null)
+        return `width: 512px`
+    else
+        return `width: ${props.width}px`
+})
+
 // Очистка при размонтировании
 import { onUnmounted } from 'vue'
+import Button from "../Button/Button.vue";
 onUnmounted(() => {
     document.body.style.overflow = ''
 })
+
+// Стили модального окна
+const styles = computed(() => [
+    modalWidth.value
+])
+
+const close = () => {
+    emit('beforeClose')
+    emit('close')
+    emit('afterClose')
+}
 </script>
 
 <template>
@@ -96,20 +124,30 @@ onUnmounted(() => {
                     >
                         <div
                             v-if="open"
-                            class="sm:max-w-lg row-start-2 w-full min-w-0 rounded-t-3xl bg-white p-8 shadow-lg ring-1 ring-zinc-950/10 sm:mb-auto sm:rounded-2xl dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline will-change-transform"
+                            class="transition-transform row-start-2 w-full min-w-0 rounded-t-3xl bg-white p-8 shadow-lg ring-1 ring-zinc-950/10 sm:mb-auto sm:rounded-2xl dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline will-change-transform"
+                            :style="styles"
                             :id="panelId"
                             :data-headlessui-state="open ? 'open' : 'closed'"
                         >
-                            <!-- Title slot -->
-                            <slot name="title" :titleId="titleId">
-                                <h2
-                                    v-if="title"
-                                    class="text-lg/6 font-semibold text-balance text-zinc-950 sm:text-base/6 dark:text-white"
-                                    :id="titleId"
-                                >
-                                    {{ title }}
-                                </h2>
-                            </slot>
+                            <div class="flex flex-row justify-between items-center">
+                                <!-- Title slot -->
+                                <slot name="title" :titleId="titleId">
+                                    <h2
+                                        v-if="title"
+                                        class="text-lg/6 font-semibold text-balance text-zinc-950 sm:text-base/6 dark:text-white"
+                                        :id="titleId"
+                                    >
+                                        {{ title }}
+                                    </h2>
+                                </slot>
+                                <slot name="close-button">
+                                    <Button icon v-if="closeButton" @click="close">
+                                        <template #icon>
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path stroke="none" d="M0 0h24v24H0z" fill="none"/><path d="M18 6l-12 12" /><path d="M6 6l12 12" /></svg>
+                                        </template>
+                                    </Button>
+                                </slot>
+                            </div>
 
                             <!-- Description slot -->
                             <slot name="description" :descriptionId="descriptionId">
