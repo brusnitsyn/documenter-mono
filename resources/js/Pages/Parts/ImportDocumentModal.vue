@@ -25,9 +25,8 @@ const { formData: uploadForm, errors, reset, loading, submit, setFile: setFileTo
 })
 
 watch(() => stage.value, (value) => {
-    if (value === 'variables') {
-        description.value = 'Опишите найденные в документе переменные'
-    }
+    if (value === 'variables') description.value = 'Опишите найденные в документе переменные'
+    else description.value = ''
 })
 
 const uploadFile = async () => {
@@ -85,6 +84,7 @@ const submitForm = () => {
 
 const afterCloseModal = () => {
     stage.value = 'upload'
+    uploadedFile.value = null
     reset()
 }
 

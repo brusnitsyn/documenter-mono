@@ -124,7 +124,7 @@ const close = () => {
                     >
                         <div
                             v-if="open"
-                            class="transition-transform row-start-2 w-full min-w-0 rounded-t-3xl bg-white p-8 shadow-lg ring-1 ring-zinc-950/10 sm:mb-auto sm:rounded-2xl dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline will-change-transform"
+                            class="transition-[width] delay-0 duration-300 row-start-2 w-full min-w-0 rounded-t-3xl bg-white p-8 shadow-lg ring-1 ring-zinc-950/10 sm:mb-auto sm:rounded-2xl dark:bg-zinc-900 dark:ring-white/10 forced-colors:outline will-change-transform"
                             :style="styles"
                             :id="panelId"
                             :data-headlessui-state="open ? 'open' : 'closed'"
