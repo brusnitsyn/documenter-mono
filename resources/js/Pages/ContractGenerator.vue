@@ -14,6 +14,7 @@ import VuePdfEmbed, { useVuePdfEmbed } from 'vue-pdf-embed'
 import {useFileDownload} from "../Composables/useFileDownload.js";
 import PriceInput from "../Components/Document/InputVariable/PriceInput.vue";
 import TextArea from "../Components/Input/TextArea.vue";
+import Calendar from "../Components/Calendar/Calendar.vue";
 
 const { downloadFile } = useFileDownload()
 
@@ -28,12 +29,7 @@ const documentStructure = ref(props.template.content || [])
 
 const prepareVariables = (variables) => {
     for (const variable of variables) {
-        formData.value.push({
-            label: variable.label,
-            type: variable.type,
-            name: variable.name,
-            options: variable.options
-        })
+        formData.value.push(variable)
     }
 }
 
@@ -343,6 +339,13 @@ const highlightElement = (element) => {
                                 v-model:number="variable.number"
                                 v-model:text="variable.value"
                                 @focus="searchAndScroll(variable.name)"
+                    />
+
+                    <Calendar v-else-if="variable.type === 'calendar'"
+                              v-model="variable.value"
+                              :format="variable.format"
+                              block
+                              @focus="searchAndScroll(variable.name)"
                     />
                 </ListStrate>
                 <template #footer>

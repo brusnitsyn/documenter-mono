@@ -10,6 +10,7 @@ import Input from "../../Components/Input/Input.vue";
 import {useApiForm} from "../../Composables/useApiForm.js";
 import Card from "../../Components/Card/Card.vue";
 import FormGroup from "../../Components/Form/FormGroup.vue";
+import Calendar from "../../Components/Calendar/Calendar.vue";
 
 const open = defineModel('open')
 const stage = ref('upload')
@@ -71,6 +72,10 @@ const variableTypes = [
         key: 'Поле ввода стоимости',
         value: 'price-input'
     },
+    {
+        key: 'Календарь',
+        value: 'calendar'
+    },
 ]
 
 const submitForm = () => {
@@ -94,6 +99,7 @@ const widthOfStage = computed(() => {
     else if (stage.value === 'variables')
         return 980
 })
+const calendarNowDate = ref(new Date())
 
 const selectedVariable = ref()
 const activeVariable = computed(() => {
@@ -113,6 +119,7 @@ const changeTypeValue = (type) => {
 
 const clickToVariable = (variable) => {
     selectedVariable.value = variable
+    calendarNowDate.value = new Date()
 }
 </script>
 
@@ -151,6 +158,14 @@ const clickToVariable = (variable) => {
 
                         <FormGroup v-if="activeVariable.type === 'select'" label="Значения для выбора" position="top">
                             <Input v-model:value="activeVariable.textOptions" @update:value="value => inputVariableOptions(value)" />
+                        </FormGroup>
+
+                        <FormGroup v-if="activeVariable.type === 'calendar'" label="Формат выводимой даты" position="top">
+                            <Input v-model:value="activeVariable.format" placeholder="К примеру dd.MM.yyyy" />
+                        </FormGroup>
+
+                        <FormGroup v-if="activeVariable.type === 'calendar'" label="Предпросмотр даты" position="top">
+                            <Calendar v-model="calendarNowDate" :format="activeVariable.format" block disabled />
                         </FormGroup>
                     </div>
                 </div>

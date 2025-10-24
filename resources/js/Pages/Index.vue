@@ -12,6 +12,7 @@ import AnimateSearch from "../Components/Input/Search/AnimateSearch.vue";
 import {ref} from "vue";
 import Button from "../Components/Button/Button.vue";
 import ImportDocumentModal from "./Parts/ImportDocumentModal.vue";
+import Calendar from "../Components/Calendar/Calendar.vue";
 
 const props = defineProps({
     templates: {
@@ -27,6 +28,7 @@ const vertical = ref(true)
 const onChangeLayoutList = () => {
     vertical.value = !vertical.value
 }
+const date = ref()
 </script>
 
 <template>
@@ -40,6 +42,7 @@ const onChangeLayoutList = () => {
             <PageBody>
                 <div class="flex flex-col gap-y-2">
                     <div class="flex flex-row gap-x-2">
+<!--                        <Calendar v-model="date" format="dd MMMM yyyy год" :return-formatted />-->
                         <AnimateSearch v-model="searchValue" />
 <!--                        <Button :tag="Link" icon href="/editor">-->
 <!--                            <template #icon>-->
