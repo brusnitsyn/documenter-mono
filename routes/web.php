@@ -29,3 +29,6 @@ Route::get('/editor', [\App\Http\Controllers\DocumentEditorController::class, 'e
 
 Route::post('/templates/import', [\App\Http\Controllers\DocImportController::class, 'store'])
     ->name('templates.import');
+
+Route::post('/templates/update', [\App\Http\Controllers\DocImportController::class, 'update'])
+    ->name('templates.update');

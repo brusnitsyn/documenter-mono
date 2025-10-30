@@ -15,6 +15,8 @@ import {useFileDownload} from "../Composables/useFileDownload.js";
 import PriceInput from "../Components/Document/InputVariable/PriceInput.vue";
 import TextArea from "../Components/Input/TextArea.vue";
 import Calendar from "../Components/Calendar/Calendar.vue";
+import Collapsible from "../Components/Collapsible/Collapsible.vue";
+import Accordion from "../Components/Accordion/Accordion.vue";
 
 const { downloadFile } = useFileDownload()
 
@@ -241,13 +243,13 @@ const highlightElement = (element) => {
                 </div>
                 <template #footer>
                     <div class="flex flex-col gap-y-1">
-                        <Button block @click="onPrint" :loading="previewLoading">
+                        <Button block @click="onPrint" :loading="previewLoading" icon-left>
                             <template #icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17h2a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v4a2 2 0 0 0 2 2h2"></path><path d="M17 9V5a2 2 0 0 0-2-2H9a2 2 0 0 0-2 2v4"></path><rect x="7" y="13" width="10" height="8" rx="2"></rect></g></svg>
                             </template>
                             Печать документа
                         </Button>
-                        <Button block @click="onDownloadDocx" :loading="previewLoading">
+                        <Button block @click="onDownloadDocx" :loading="previewLoading" icon-left>
                             <template #icon>
                                 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3v4a1 1 0 0 0 1 1h4"></path><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"></path><path d="M12 11v6"></path><path d="M9 14l3 3l3-3"></path></g></svg>
                             </template>
@@ -285,69 +287,138 @@ const highlightElement = (element) => {
                         </div>
                     </div>
                 </div>
-                <ListStrate v-else v-for="(variable, key) in formData" :key="key" :header="variable.label">
-                    <Input
-                        v-if="variable.type === 'text'"
-                        :id="key"
-                        @focus="searchAndScroll(variable.name)"
-                        v-model:value="variable.value"
-                        @update:value="value => onChangeVariableTextValue(key, value)"
-                        :placeholder="`Введите ${formatLabel(variable.label)}`"
-                    />
+                <template v-for="(data, key) in formData" :key="key">
+                    <div v-if="data.type === 'group'">
+                        <Collapsible :header="data.label">
+                            <ListStrate v-for="(variable, key) in data.children" :key="key" :header="variable.label">
+                                <Input
+                                    v-if="variable.type === 'text'"
+                                    :id="key"
+                                    @focus="searchAndScroll(variable.name)"
+                                    v-model:value="variable.value"
+                                    @update:value="value => onChangeVariableTextValue(key, value)"
+                                    :placeholder="`Введите ${formatLabel(variable.label)}`"
+                                />
 
-                    <TextArea
-                        v-if="variable.type === 'textarea'"
-                        :rows="8"
-                        :resize="false"
-                        :id="key"
-                        @focus="searchAndScroll(variable.name)"
-                        v-model:value="variable.value"
-                        @update:value="value => onChangeVariableTextValue(key, value)"
-                        :placeholder="`Введите ${formatLabel(variable.label)}`"
-                    />
+                                <TextArea
+                                    v-if="variable.type === 'textarea'"
+                                    :rows="8"
+                                    :resize="false"
+                                    :id="key"
+                                    @focus="searchAndScroll(variable.name)"
+                                    v-model:value="variable.value"
+                                    @update:value="value => onChangeVariableTextValue(key, value)"
+                                    :placeholder="`Введите ${formatLabel(variable.label)}`"
+                                />
 
-                    <!-- Select поле -->
-                    <Select
-                        v-else-if="variable.type === 'select'"
-                        :id="key"
-                        @focus="searchAndScroll(variable.name)"
-                        @change="value => onChangeVariableSelectValue(key, value)"
-                        v-model:value="variable.value"
-                        :options="variable.options"
-                    />
+                                <!-- Select поле -->
+                                <Select
+                                    v-else-if="variable.type === 'select'"
+                                    :id="key"
+                                    @focus="searchAndScroll(variable.name)"
+                                    @change="value => onChangeVariableSelectValue(key, value)"
+                                    v-model:value="variable.value"
+                                    :options="variable.options"
+                                />
 
-                    <!-- Radio кнопки -->
-                    <div v-else-if="variable.type === 'radio'" class="space-y-2">
-                        <label
-                            v-for="(optionLabel, optionValue) in variable.options"
-                            :key="optionValue"
-                            class="flex items-center"
-                        >
-                            <input
-                                type="radio"
-                                :name="key"
-                                :value="optionValue"
-                                v-model="formData[key]"
-                                @change="updatePreview"
-                                class="mr-2"
-                            >
-                            {{ optionLabel }}
-                        </label>
+                                <!-- Radio кнопки -->
+                                <div v-else-if="variable.type === 'radio'" class="space-y-2">
+                                    <label
+                                        v-for="(optionLabel, optionValue) in variable.options"
+                                        :key="optionValue"
+                                        class="flex items-center"
+                                    >
+                                        <input
+                                            type="radio"
+                                            :name="key"
+                                            :value="optionValue"
+                                            v-model="formData[key]"
+                                            @change="updatePreview"
+                                            class="mr-2"
+                                        >
+                                        {{ optionLabel }}
+                                    </label>
+                                </div>
+
+                                <PriceInput v-else-if="variable.type === 'price-input'"
+                                            v-model:number="variable.number"
+                                            v-model:text="variable.value"
+                                            @focus="searchAndScroll(variable.name)"
+                                />
+
+                                <Calendar v-else-if="variable.type === 'calendar'"
+                                          v-model="variable.value"
+                                          :format="variable.format"
+                                          block
+                                          @focus="searchAndScroll(variable.name)"
+                                />
+                            </ListStrate>
+                        </Collapsible>
                     </div>
+                    <ListStrate v-else :key="key" :header="data.label">
+                        <Input
+                            v-if="data.type === 'text'"
+                            :id="key"
+                            @focus="searchAndScroll(data.name)"
+                            v-model:value="data.value"
+                            @update:value="value => onChangeVariableTextValue(key, value)"
+                            :placeholder="`Введите ${formatLabel(data.label)}`"
+                        />
 
-                    <PriceInput v-else-if="variable.type === 'price-input'"
-                                v-model:number="variable.number"
-                                v-model:text="variable.value"
-                                @focus="searchAndScroll(variable.name)"
-                    />
+                        <TextArea
+                            v-if="data.type === 'textarea'"
+                            :rows="8"
+                            :resize="false"
+                            :id="key"
+                            @focus="searchAndScroll(data.name)"
+                            v-model:value="data.value"
+                            @update:value="value => onChangeVariableTextValue(key, value)"
+                            :placeholder="`Введите ${formatLabel(data.label)}`"
+                        />
 
-                    <Calendar v-else-if="variable.type === 'calendar'"
-                              v-model="variable.value"
-                              :format="variable.format"
-                              block
-                              @focus="searchAndScroll(variable.name)"
-                    />
-                </ListStrate>
+                        <!-- Select поле -->
+                        <Select
+                            v-else-if="data.type === 'select'"
+                            :id="key"
+                            @focus="searchAndScroll(data.name)"
+                            @change="value => onChangeVariableSelectValue(key, value)"
+                            v-model:value="data.value"
+                            :options="data.options"
+                        />
+
+                        <!-- Radio кнопки -->
+                        <div v-else-if="data.type === 'radio'" class="space-y-2">
+                            <label
+                                v-for="(optionLabel, optionValue) in data.options"
+                                :key="optionValue"
+                                class="flex items-center"
+                            >
+                                <input
+                                    type="radio"
+                                    :name="key"
+                                    :value="optionValue"
+                                    v-model="formData[key]"
+                                    @change="updatePreview"
+                                    class="mr-2"
+                                >
+                                {{ optionLabel }}
+                            </label>
+                        </div>
+
+                        <PriceInput v-else-if="data.type === 'price-input'"
+                                    v-model:number="data.number"
+                                    v-model:text="data.value"
+                                    @focus="searchAndScroll(data.name)"
+                        />
+
+                        <Calendar v-else-if="data.type === 'calendar'"
+                                  v-model="data.value"
+                                  :format="data.format"
+                                  block
+                                  @focus="searchAndScroll(data.name)"
+                        />
+                    </ListStrate>
+                </template>
                 <template #footer>
                     <Button :loading="previewLoading" block @click="updatePreview">
                         Обновить предпросмотр

@@ -1,5 +1,6 @@
 <script setup>
 
+import SentryNotification from "../Components/Notifications/SentryNotification.vue";
 </script>
 
 <template>
@@ -15,6 +16,7 @@
                 </a>
             </div>
         </div>
+        <SentryNotification />
     </main>
 </template>
 

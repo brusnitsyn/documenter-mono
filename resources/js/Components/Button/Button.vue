@@ -34,6 +34,22 @@ const props = defineProps({
         type: Boolean,
         default: false
     },
+    textAlign: {
+        type: String,
+        default: 'left'
+    },
+    iconLeft: {
+        type: Boolean,
+        default: false
+    },
+    iconRight: {
+        type: Boolean,
+        default: false
+    },
+    maxWidth: {
+        type: [String, Number],
+        default: 'none'
+    },
 })
 
 const baseClasses = [
@@ -68,9 +84,26 @@ const variants = {
     ],
     ghost: [
         'bg-transparent', 'border-transparent', 'hover:border-zinc-950/20', 'dark:hover:border-white/20',
-        'hover:dark:bg-white/5'
     ]
 }
+
+const textContainerClasses = computed(() => {
+    let base = ['flex', 'flex-row', 'gap-x-2', 'relative']
+
+    if (props.textAlign) {
+        const align = {
+            center: 'justify-center',
+            left: 'justify-start',
+            right: 'justify-end',
+        }
+
+        const textAlign = align[props.textAlign]
+
+        base = base.concat([textAlign])
+    }
+
+    return base
+})
 
 const classes = computed(() => {
     let base = [...baseClasses]
@@ -89,6 +122,24 @@ const classes = computed(() => {
         base = base.concat(variants[props.variant])
     }
 
+    return base
+})
+
+const textClasses = computed(() => {
+    let base = ['min-w-0', 'w-full']
+
+    // Автоматически рассчитываем максимальную ширину если есть иконки
+    if (props.maxWidth === 'none') {
+        if (props.iconLeft && props.iconRight) {
+            base = base.concat(['max-w-[calc(100%-8rem)]']) // минус 2 иконки
+        } else if (props.iconLeft || props.iconRight) {
+            base = base.concat(['max-w-[calc(100%-1.5rem)]']) // минус 1 иконка
+        }
+    } else if (props.maxWidth) {
+        base = base.concat([`max-w-[${props.maxWidth}]`])
+    }
+
+    base = base.concat(['truncate'])
 
     return base
 })
@@ -109,7 +160,7 @@ const handleClick = (event) => {
                :class="classes"
                :disabled="loading || disabled"
                v-bind="$attrs">
-        <div class="flex flex-row gap-x-2 items-center relative">
+        <div :class="textContainerClasses">
             <!-- Спиннер загрузки -->
             <div
                 v-if="loading"
@@ -128,14 +179,29 @@ const handleClick = (event) => {
             <!-- Основной контент кнопки (скрывается при loading) -->
             <div
                 :class="[
-                    'flex flex-row gap-x-2 items-center transition-opacity duration-200',
+                    'flex flex-row gap-x-2 items-center transition-opacity duration-200 w-full',
                     loading ? 'opacity-0' : 'opacity-100'
                 ]"
             >
-                <div v-if="$slots.icon" class="size-6 stroke-zinc-500 group-disabled:stroke-zinc-600 sm:size-4 dark:stroke-zinc-400">
-                    <slot name="icon" />
+                <div
+                    v-if="($slots.iconLeft || (iconLeft && $slots.icon))"
+                    class="shrink-0 size-6 stroke-zinc-500 group-disabled:stroke-zinc-600 sm:size-4 dark:stroke-zinc-400"
+                >
+                    <slot name="iconLeft">
+                        <slot name="icon" />
+                    </slot>
                 </div>
-                <slot />
+                <div :class="textClasses">
+                    <slot />
+                </div>
+                <div
+                    v-if="$slots.iconRight || (iconRight && $slots.icon)"
+                    class="shrink-0 size-6 stroke-zinc-500 group-disabled:stroke-zinc-600 sm:size-4 dark:stroke-zinc-400"
+                >
+                    <slot name="iconRight">
+                        <slot name="icon" />
+                    </slot>
+                </div>
             </div>
         </div>
     </component>

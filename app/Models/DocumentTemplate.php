@@ -30,7 +30,7 @@ class DocumentTemplate extends Model
 
         // Копируем исходный шаблон
         $templatePath = $tempDir . '/template.docx';
-        copy(storage_path($this->source_path), $templatePath);
+        copy($this->source_path, $templatePath);
 
         $docx = new DocxTemplateProcessor();
 

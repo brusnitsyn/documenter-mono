@@ -1,5 +1,6 @@
 <script setup>
 
+import SentryNotification from "../Components/Notifications/SentryNotification.vue";
 </script>
 
 <template>
@@ -28,6 +29,7 @@
                 ГОСУДАРСТВЕННОЕ АВТОНОМНОЕ УЧРЕЖДЕНИЕ ЗДРАВООХРАНЕНИЯ АМУРСКОЙ ОБЛАСТИ "АМУРСКАЯ ОБЛАСТНАЯ КЛИНИЧЕСКАЯ БОЛЬНИЦА", 2025 год
             </a>
         </div>
+        <SentryNotification />
     </main>
 </template>
 

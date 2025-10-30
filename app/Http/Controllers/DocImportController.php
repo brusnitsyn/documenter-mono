@@ -12,10 +12,52 @@ use PhpOffice\PhpWord\IOFactory;
 
 class DocImportController extends Controller
 {
+    public function show($id, Request $request)
+    {
+        $template = DocumentTemplate::findOrFail($id);
+
+        $urlFile = \Storage::temporaryUrl($template->source_path, now()->addMinutes(2));
+
+        return response()->json([
+            'id' => $template->id,
+            'name' => $template->name,
+            'description' => $template->description,
+            'file_url' => $urlFile,
+            'variables' => $template->variables,
+        ]);
+    }
+
+    public function update(Request $request)
+    {
+        $data = $request->validate([
+            'id' => 'required|numeric',
+            'file' => 'nullable|file|mimes:docx|max:10240',
+            'name' => 'nullable|string|max:255',
+            'description' => 'nullable|string',
+            'variables' => 'nullable|array',
+        ]);
+
+        $template = DocumentTemplate::findOrFail($data['id']);
+
+        if ($request->hasFile('file')) {
+            $dirName = pathinfo($template->source_path, PATHINFO_DIRNAME);
+            $fileName = pathinfo($template->source_path, PATHINFO_BASENAME);
+            $file = $request->file('file');
+            $file->move("$dirName", $fileName);
+            $template->update([
+                'source_path' => "$dirName/$fileName",
+            ]);
+        }
+
+        $template->update([
+            'name' => $data['name'],
+            'description' => $data['description'],
+            'variables' => $data['variables'],
+        ]);
+    }
+
     public function store(Request $request, DocxParser $parser)
     {
-//        dd($request->files);
-
         $data = $request->validate([
             'file' => 'required|file|mimes:docx|max:10240',
             'name' => 'nullable|string|max:255',
@@ -26,106 +68,16 @@ class DocImportController extends Controller
         $file = $request->file('file');
         $templateFolderName = md5(uniqid(rand(), true));
         $templateFileName = 'source.' . $file->getClientOriginalExtension();
-        $previewFileName = 'preview.html';
-        $laravelPath = 'app/private/templates/' . $templateFolderName;
-        $templateDir = storage_path($laravelPath);
-        $templatePath = $file->move($templateDir, $templateFileName);
-        $previewPath = storage_path("{$laravelPath}/{$previewFileName}");
-
-        $escapedTemplateDir = escapeshellarg($templateDir);
-
-        // Команда конвертации
-        $command = "cd $escapedTemplateDir && pandoc -f docx -t html5 $templateFileName -o $previewPath --self-contained";
-//        $command = "cd {$escapedTemplateDir} && libreoffice --headless --convert-to html {$templateFileName}";
-
-        $result = Process::timeout(300)->run($command);
-
-        \Log::info('Convert DOCX to HTML output: ' . $result->output());
-        \Log::info('Convert DOCX to HTML error: ' . $result->errorOutput());
-
-        if (!$result->successful()) {
-            throw new \Exception('LibreOffice conversion failed: ' . $result->errorOutput());
-        }
-
-        $hasConverted = File::exists($templateDir. '/' . $previewFileName);
-
-        $htmlContent = file_get_contents($templateDir. '/' . $previewFileName);
-        $cleanedHtml = $this->cleanHtml($htmlContent);
+        $laravelPath = 'templates/' . $templateFolderName;
+        $file->move("storage/$laravelPath", $templateFileName);
 
         $template = DocumentTemplate::create([
             'name' => $data['name'] ?? 'Тест',
             'description' => $data['description'],
-            'content' => $cleanedHtml,
+            'content' => 'content',
             'variables' => $data['variables'] ?? [],
-            'source_path' => $laravelPath . '/' . $templateFileName,
+            'source_path' => "storage/$laravelPath" . '/' . $templateFileName,
         ]);
-
-//        try {
-//            $file = $request->file('doc_file');
-//
-//            $file->store('templates/source');
-//
-//            $phpword = IOFactory::createReader()->load($request->doc_file);
-//            $phpwriter = IOFactory::createWriter($phpword, 'HTML');
-//
-//            // Сохраняем во временный файл
-//            $tempHtmlPath = storage_path('temp_' . uniqid() . '.html');
-//            $phpwriter->save($tempHtmlPath);
-//
-//            // Загружаем HTML и извлекаем содержимое body
-//            $dom = new \DOMDocument();
-//            @$dom->loadHTMLFile($tempHtmlPath);
-//
-//            $pages = [];
-//            $body = $dom->getElementsByTagName('body')->item(0);
-//            if ($body) {
-//                $currentPage = 1;
-//                $currentPageContent = '';
-//
-//                foreach ($body->childNodes as $child) {
-//                    // Проверяем, является ли элемент div с классом Page[n]
-//                    if ($child->nodeType === XML_ELEMENT_NODE &&
-//                        $child->nodeName === 'div' &&
-//                        preg_match('/^Page(\d+)$/', $child->getAttribute('class'), $matches)) {
-//
-//                        // Сохраняем предыдущую страницу, если есть контент
-//                        if (!empty(trim($currentPageContent))) {
-//                            $pages[] = trim($currentPageContent);
-//                        }
-//
-//                        // Начинаем новую страницу
-//                        $currentPage = (int)$matches[1];
-//                        $currentPageContent = '';
-//                        continue;
-//                    }
-//
-//                    // Добавляем HTML контент к текущей странице
-//                    $currentPageContent .= $dom->saveHTML($child);
-//                }
-//
-//                // Добавляем последнюю страницу
-//                if (!empty(trim($currentPageContent))) {
-//                    $pages[] = trim($currentPageContent);
-//                }
-//            }
-//
-//            // Удаляем временный файл
-//            unlink($tempHtmlPath);
-//
-//            $template = DocumentTemplate::create([
-//                'name' => $request->name ?? 'Тест',
-//                'description' => $request->description,
-//                'content' => $pages,
-//                'variables_config' => $templateData['variables_config'] ?? [],
-//                'source' => 'doc_import'
-//            ]);
-//
-//            return redirect()->route('templates.edit', $template->id)
-//                ->with('success', 'Шаблон успешно импортирован!');
-//
-//        } catch (\Exception $e) {
-//            return back()->with('error', 'Ошибка импорта: ' . $e->getMessage());
-//        }
     }
 
     private function cleanHtml($html) : string

@@ -8,3 +8,5 @@ Route::get('/user', function (Request $request) {
 })->middleware('auth:sanctum');
 
 Route::post('/import/variables', [\App\Http\Controllers\DocImportController::class, 'previewVariables']);
+
+Route::get('/templates/{id}', [\App\Http\Controllers\DocImportController::class, 'show']);
