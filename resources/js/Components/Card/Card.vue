@@ -42,7 +42,7 @@ const contentClass = computed(() => {
 </script>
 
 <template>
-    <div class="h-full flex flex-col justify-between overflow-clip lg:rounded-lg lg:bg-white lg:shadow-xs lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10">
+    <div class="h-full flex flex-col justify-between overflow-clip rounded-lg bg-white lg:shadow-xs ring-1 ring-zinc-950/5 dark:bg-zinc-900 dark:ring-white/10">
         <div class="p-3">
             <CardHeader>
                 <slot v-if="$slots.header" name="header" />

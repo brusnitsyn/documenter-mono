@@ -13,7 +13,7 @@ const verticalClasses = [
 ]
 
 const horizontalClasses = [
-    'grid', 'grid-cols-3', 'gap-y-2', 'gap-x-2', 'grow'
+    'grid', 'grid-cols-3', 'gap-y-2', 'gap-x-2', 'grow', 'items-start'
 ]
 
 const classes = computed(() => {
