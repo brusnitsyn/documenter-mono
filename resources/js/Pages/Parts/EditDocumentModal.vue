@@ -188,6 +188,7 @@ const createVariableGroup = () => {
         name: `group-${Date.now()}`
     }
     templateVariables.value.push(group)
+    uploadForm.value.variables = [...templateVariables.value]
 }
 
 // Drag and Drop функции

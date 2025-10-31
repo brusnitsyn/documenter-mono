@@ -113,7 +113,8 @@ class DocxVariableExtractor
             foreach ($matches[0] as $index => $fullMatch) {
                 $variables[] = [
                     'name' => $fullMatch,        // Полное выражение с ${}
-                    'label' => $matches[1][$index] // Только содержимое внутри {}
+                    'label' => $matches[1][$index], // Только содержимое внутри {}
+                    'type' => 'text'
                 ];
             }
         }
